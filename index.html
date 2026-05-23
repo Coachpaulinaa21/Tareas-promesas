@@ -64,12 +64,38 @@
   .toggle-add { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #534ab7; background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 16px; -webkit-tap-highlight-color: transparent; }
   .form-wrap { display: none; }
   .form-wrap.open { display: block; }
+
+  /* Sync status indicator */
+  .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #888; margin-bottom: 12px; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; flex-shrink: 0; transition: background 0.3s; }
+  .sync-dot.connected { background: #2d7a4f; }
+  .sync-dot.syncing { background: #f0a500; animation: pulse 1s infinite; }
+  .sync-dot.error { background: #c0392b; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* Loading overlay */
+  #loading-overlay { position: fixed; inset: 0; background: #f5f5f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; z-index: 100; }
+  #loading-overlay.hidden { display: none; }
+  .loading-spinner { width: 28px; height: 28px; border: 2.5px solid #e0e0d8; border-top-color: #534ab7; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: #888; }
 </style>
 </head>
 <body>
 
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Conectando con Firestore…</div>
+</div>
+
 <h1>Tareas Promesas</h1>
 <p class="subtitle" id="fecha-hoy"></p>
+
+<div class="sync-status">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span id="sync-label">Conectando…</span>
+</div>
 
 <div class="stats">
   <div class="stat"><div class="stat-val" id="s-total">0</div><div class="stat-label">Total</div></div>
@@ -78,12 +104,12 @@
 </div>
 
 <div class="filter-row">
-  <button class="filter-btn active" onclick="setFilter('todos')">Todas</button>
-  <button class="filter-btn" onclick="setFilter('JY')">Juliana</button>
-  <button class="filter-btn" onclick="setFilter('PA')">Paulina</button>
-  <button class="filter-btn" onclick="setFilter('CA')">Carolina</button>
-  <button class="filter-btn" onclick="setFilter('JU')">Juan</button>
-  <button class="filter-btn" onclick="setFilter('alta')">Solo alta prioridad</button>
+  <button class="filter-btn active" onclick="setFilter('todos',this)">Todas</button>
+  <button class="filter-btn" onclick="setFilter('JY',this)">Juliana</button>
+  <button class="filter-btn" onclick="setFilter('PA',this)">Paulina</button>
+  <button class="filter-btn" onclick="setFilter('CA',this)">Carolina</button>
+  <button class="filter-btn" onclick="setFilter('JU',this)">Juan</button>
+  <button class="filter-btn" onclick="setFilter('alta',this)">Solo alta prioridad</button>
 </div>
 
 <button class="toggle-add" onclick="toggleForm()">
@@ -120,128 +146,215 @@
 <div id="app"></div>
 <button class="reset-btn" onclick="resetAll()">Desmarcar todas las tareas</button>
 
+<!-- Firebase SDK (compat version — works in plain HTML without bundler) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <script>
-const TAREAS = [
-  { id:1,  proj:'Copa Promesas',   tipo:'interno', texto:'Revisar archivo de control comercial copa',   prio:'alta',   resp:'CA' },
-  { id:2,  proj:'Copa Promesas',   tipo:'interno', texto:'Convenio Reinvent',                           prio:'alta',   resp:'JY' },
-  { id:3,  proj:'Copa Promesas',   tipo:'interno', texto:'E-commerce',                                  prio:'media',  resp:'CA' },
-  { id:4,  proj:'Copa Promesas',   tipo:'interno', texto:'Podcast',                                     prio:'normal', resp:'JY' },
-  { id:5,  proj:'Copa Promesas',   tipo:'interno', texto:'Envío cotizaciones paquetes',                 prio:'alta',   resp:'CA' },
-  { id:6,  proj:'Copa Promesas',   tipo:'interno', texto:'Finalizar precios de proveedores y negociaciones', prio:'alta', resp:'JY' },
-  { id:7,  proj:'Copa Promesas',   tipo:'interno', texto:'Revisión / seguimiento de inscripciones',    prio:'media',  resp:'CA' },
-  { id:8,  proj:'Club Promesas',   tipo:'interno', texto:'Preparación podcast',                         prio:'media',  resp:'JY' },
-  { id:9,  proj:'Club Promesas',   tipo:'interno', texto:'Estrategia club — base de datos colegios',   prio:'alta',   resp:'PA' },
-  { id:10, proj:'Club Promesas',   tipo:'interno', texto:'NBA Tour',                                    prio:'media',  resp:'JY' },
-  { id:11, proj:'Club Promesas',   tipo:'interno', texto:'Proyecto comercial Promesas (Copa y Club)',   prio:'alta',   resp:'JY' },
-  { id:12, proj:'Club Promesas',   tipo:'interno', texto:'Informe periodo Coach',                       prio:'alta',   resp:'JY' },
-  { id:13, proj:'Club Promesas',   tipo:'interno', texto:'Herramienta control de procesos por área',   prio:'media',  resp:'JY' },
-  { id:14, proj:'Club Promesas',   tipo:'interno', texto:'Reconstrucción página del Club Promesas',    prio:'media',  resp:'JY' },
-  { id:15, proj:'Club Promesas',   tipo:'interno', texto:'Entrega planeación community manager (1 jun)',prio:'alta',   resp:'CA' },
-  { id:16, proj:'Club Promesas',   tipo:'interno', texto:'Seguimiento al pedido de uniformes Vivoon',  prio:'alta',   resp:'JU' },
-  { id:17, proj:'Club Promesas',   tipo:'interno', texto:'Seguimiento categorización',                 prio:'media',  resp:'JY' },
-  { id:18, proj:'Marinilla',       tipo:'interno', texto:'Concretar visita con Carlos (UPB) — presentar proyecto', prio:'alta', resp:'JY' },
-  { id:19, proj:'Panamá',          tipo:'interno', texto:'Reunión recaudo',                             prio:'alta',   resp:'JY' },
-  { id:20, proj:'Panamá',          tipo:'interno', texto:'Promoción y plan nuevo de ventas',            prio:'media',  resp:'JY' },
-  { id:21, proj:'Panamá',          tipo:'interno', texto:'Reestructuración de precios',                 prio:'media',  resp:'JY' },
-  { id:22, proj:'Vivoon',          tipo:'externo', texto:'Firmar convenio Vivoon',                      prio:'alta',   resp:'JY' },
-  { id:23, proj:'Vivoon',          tipo:'externo', texto:'Listado y seguimiento comercial Vivoon',      prio:'alta',   resp:'JY' },
-  { id:24, proj:'Vivoon',          tipo:'externo', texto:'Proyecto embajador Vivoon',                   prio:'media',  resp:'JY' },
-  { id:25, proj:'Vivoon',          tipo:'externo', texto:'Seguimiento entrega pedidos Vivoon',          prio:'alta',   resp:'JU' },
-  { id:26, proj:'U. San Buenaventura', tipo:'externo', texto:'Concretar visita #2 a Promesas USB',     prio:'alta',   resp:'JY' },
-  { id:27, proj:'U. San Buenaventura', tipo:'externo', texto:'Enviar plan estratégico',                prio:'alta',   resp:'PA' },
-  { id:28, proj:'U. San Buenaventura', tipo:'externo', texto:'Enviar mapa de gestión',                 prio:'alta',   resp:'PA' },
-  { id:29, proj:'U. San Buenaventura', tipo:'externo', texto:'Enviar mapa de procesos',                prio:'alta',   resp:'PA' },
-  { id:30, proj:'U. San Buenaventura', tipo:'externo', texto:'Enviar estructura organizacional',       prio:'alta',   resp:'PA' },
-  { id:31, proj:'Copa UPB',        tipo:'externo', texto:'Propuesta Copa "Ser Diferente" UPB',         prio:'alta',   resp:'PA' },
-  { id:32, proj:'Proyecto Humano', tipo:'externo', texto:'Elaboración propuesta UPB (para el rector)', prio:'alta',   resp:'JY' },
-  { id:33, proj:'Proyecto Humano', tipo:'externo', texto:'Elaboración taller papás Promesas',          prio:'media',  resp:'JY' },
-  { id:34, proj:'Edunova',         tipo:'externo', texto:'Elaboración plan comercial',                  prio:'alta',   resp:'JY' },
+// ── Firebase init ──────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAMFVVCAekTAqRaerBpuifUByzBOVqTd5I",
+  authDomain: "promesas-tareas.firebaseapp.com",
+  projectId: "promesas-tareas",
+  storageBucket: "promesas-tareas.firebasestorage.app",
+  messagingSenderId: "652607730000",
+  appId: "1:652607730000:web:0b5fcdc58845f12f423c55",
+  measurementId: "G-8PN2XZLY8T"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── Collections ────────────────────────────────────────────────
+// tasks   → { id (string), proj, tipo, texto, prio, resp, seed (bool), createdAt }
+// status  → single doc "global" → { done: [id, id, …] }
+
+const tasksCol  = db.collection('tasks');
+const statusDoc = db.collection('status').doc('global');
+
+// ── Seed tasks (hardcoded list) ────────────────────────────────
+const SEED_TASKS = [
+  { id:'t1',  proj:'Copa Promesas',        tipo:'interno', texto:'Revisar archivo de control comercial copa',        prio:'alta',   resp:'CA' },
+  { id:'t2',  proj:'Copa Promesas',        tipo:'interno', texto:'Convenio Reinvent',                                prio:'alta',   resp:'JY' },
+  { id:'t3',  proj:'Copa Promesas',        tipo:'interno', texto:'E-commerce',                                       prio:'media',  resp:'CA' },
+  { id:'t4',  proj:'Copa Promesas',        tipo:'interno', texto:'Podcast',                                          prio:'normal', resp:'JY' },
+  { id:'t5',  proj:'Copa Promesas',        tipo:'interno', texto:'Envío cotizaciones paquetes',                      prio:'alta',   resp:'CA' },
+  { id:'t6',  proj:'Copa Promesas',        tipo:'interno', texto:'Finalizar precios de proveedores y negociaciones', prio:'alta',   resp:'JY' },
+  { id:'t7',  proj:'Copa Promesas',        tipo:'interno', texto:'Revisión / seguimiento de inscripciones',         prio:'media',  resp:'CA' },
+  { id:'t8',  proj:'Club Promesas',        tipo:'interno', texto:'Preparación podcast',                              prio:'media',  resp:'JY' },
+  { id:'t9',  proj:'Club Promesas',        tipo:'interno', texto:'Estrategia club — base de datos colegios',        prio:'alta',   resp:'PA' },
+  { id:'t10', proj:'Club Promesas',        tipo:'interno', texto:'NBA Tour',                                         prio:'media',  resp:'JY' },
+  { id:'t11', proj:'Club Promesas',        tipo:'interno', texto:'Proyecto comercial Promesas (Copa y Club)',        prio:'alta',   resp:'JY' },
+  { id:'t12', proj:'Club Promesas',        tipo:'interno', texto:'Informe periodo Coach',                            prio:'alta',   resp:'JY' },
+  { id:'t13', proj:'Club Promesas',        tipo:'interno', texto:'Herramienta control de procesos por área',        prio:'media',  resp:'JY' },
+  { id:'t14', proj:'Club Promesas',        tipo:'interno', texto:'Reconstrucción página del Club Promesas',         prio:'media',  resp:'JY' },
+  { id:'t15', proj:'Club Promesas',        tipo:'interno', texto:'Entrega planeación community manager (1 jun)',    prio:'alta',   resp:'CA' },
+  { id:'t16', proj:'Club Promesas',        tipo:'interno', texto:'Seguimiento al pedido de uniformes Vivoon',       prio:'alta',   resp:'JU' },
+  { id:'t17', proj:'Club Promesas',        tipo:'interno', texto:'Seguimiento categorización',                      prio:'media',  resp:'JY' },
+  { id:'t18', proj:'Marinilla',            tipo:'interno', texto:'Concretar visita con Carlos (UPB) — presentar proyecto', prio:'alta', resp:'JY' },
+  { id:'t19', proj:'Panamá',               tipo:'interno', texto:'Reunión recaudo',                                  prio:'alta',   resp:'JY' },
+  { id:'t20', proj:'Panamá',               tipo:'interno', texto:'Promoción y plan nuevo de ventas',                 prio:'media',  resp:'JY' },
+  { id:'t21', proj:'Panamá',               tipo:'interno', texto:'Reestructuración de precios',                      prio:'media',  resp:'JY' },
+  { id:'t22', proj:'Vivoon',               tipo:'externo', texto:'Firmar convenio Vivoon',                           prio:'alta',   resp:'JY' },
+  { id:'t23', proj:'Vivoon',               tipo:'externo', texto:'Listado y seguimiento comercial Vivoon',           prio:'alta',   resp:'JY' },
+  { id:'t24', proj:'Vivoon',               tipo:'externo', texto:'Proyecto embajador Vivoon',                        prio:'media',  resp:'JY' },
+  { id:'t25', proj:'Vivoon',               tipo:'externo', texto:'Seguimiento entrega pedidos Vivoon',               prio:'alta',   resp:'JU' },
+  { id:'t26', proj:'U. San Buenaventura',  tipo:'externo', texto:'Concretar visita #2 a Promesas USB',              prio:'alta',   resp:'JY' },
+  { id:'t27', proj:'U. San Buenaventura',  tipo:'externo', texto:'Enviar plan estratégico',                         prio:'alta',   resp:'PA' },
+  { id:'t28', proj:'U. San Buenaventura',  tipo:'externo', texto:'Enviar mapa de gestión',                          prio:'alta',   resp:'PA' },
+  { id:'t29', proj:'U. San Buenaventura',  tipo:'externo', texto:'Enviar mapa de procesos',                         prio:'alta',   resp:'PA' },
+  { id:'t30', proj:'U. San Buenaventura',  tipo:'externo', texto:'Enviar estructura organizacional',                prio:'alta',   resp:'PA' },
+  { id:'t31', proj:'Copa UPB',             tipo:'externo', texto:'Propuesta Copa "Ser Diferente" UPB',              prio:'alta',   resp:'PA' },
+  { id:'t32', proj:'Proyecto Humano',      tipo:'externo', texto:'Elaboración propuesta UPB (para el rector)',      prio:'alta',   resp:'JY' },
+  { id:'t33', proj:'Proyecto Humano',      tipo:'externo', texto:'Elaboración taller papás Promesas',               prio:'media',  resp:'JY' },
+  { id:'t34', proj:'Edunova',              tipo:'externo', texto:'Elaboración plan comercial',                       prio:'alta',   resp:'JY' },
 ];
 
 const RESP_LABEL = { JY:'Juliana', PA:'Paulina', CA:'Carolina', JU:'Juan', PE:'Pedro' };
-let done = JSON.parse(localStorage.getItem('promesas_done') || '[]');
-let filtro = 'todos';
 
-function save() { localStorage.setItem('promesas_done', JSON.stringify(done)); }
+// ── App state ──────────────────────────────────────────────────
+let allTasks = []; // merged: seed + extras from Firestore
+let doneIds  = []; // array of task id strings
+let filtro   = 'todos';
 
-function setFilter(f) {
+// ── Sync status helpers ────────────────────────────────────────
+function setSyncStatus(state, text) {
+  const dot   = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  dot.className = 'sync-dot ' + state;
+  label.textContent = text;
+}
+
+// ── Seed Firestore on first run ────────────────────────────────
+async function ensureSeedTasks() {
+  const snap = await tasksCol.where('seed', '==', true).limit(1).get();
+  if (!snap.empty) return; // already seeded
+  const batch = db.batch();
+  SEED_TASKS.forEach(t => {
+    const ref = tasksCol.doc(t.id);
+    batch.set(ref, { ...t, seed: true, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+  });
+  await batch.commit();
+}
+
+// ── Real-time listeners ────────────────────────────────────────
+function startListeners() {
+  // 1. Listen to tasks collection
+  tasksCol.orderBy('createdAt', 'asc').onSnapshot(snap => {
+    allTasks = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+    render();
+  }, err => {
+    console.error('Tasks listener error:', err);
+    setSyncStatus('error', 'Error de conexión');
+  });
+
+  // 2. Listen to done status doc
+  statusDoc.onSnapshot(snap => {
+    if (snap.exists) {
+      doneIds = snap.data().done || [];
+    } else {
+      doneIds = [];
+    }
+    render();
+  }, err => {
+    console.error('Status listener error:', err);
+  });
+}
+
+// ── Toggle a task done/undone ──────────────────────────────────
+async function toggle(id) {
+  setSyncStatus('syncing', 'Guardando…');
+  try {
+    const newDone = doneIds.includes(id)
+      ? doneIds.filter(x => x !== id)
+      : [...doneIds, id];
+
+    await statusDoc.set({ done: newDone }, { merge: true });
+    setSyncStatus('connected', 'Sincronizado');
+  } catch (e) {
+    console.error(e);
+    setSyncStatus('error', 'Error al guardar');
+  }
+}
+
+// ── Add a new task ─────────────────────────────────────────────
+async function addTarea() {
+  const texto = document.getElementById('new-texto').value.trim();
+  const proj  = document.getElementById('new-proj').value.trim();
+  if (!texto) { alert('Escribe la descripción de la tarea.'); return; }
+  if (!proj)  { alert('Escribe el nombre del proyecto.'); return; }
+
+  setSyncStatus('syncing', 'Guardando…');
+  try {
+    await tasksCol.add({
+      proj,
+      tipo:      document.getElementById('new-tipo').value,
+      texto,
+      prio:      document.getElementById('new-prio').value,
+      resp:      document.getElementById('new-resp').value,
+      seed:      false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    document.getElementById('new-texto').value = '';
+    document.getElementById('new-proj').value  = '';
+    toggleForm();
+    setSyncStatus('connected', 'Sincronizado');
+  } catch (e) {
+    console.error(e);
+    setSyncStatus('error', 'Error al guardar');
+  }
+}
+
+// ── Reset all ──────────────────────────────────────────────────
+async function resetAll() {
+  if (!confirm('¿Desmarcar todas las tareas?')) return;
+  setSyncStatus('syncing', 'Guardando…');
+  try {
+    await statusDoc.set({ done: [] });
+    setSyncStatus('connected', 'Sincronizado');
+  } catch (e) {
+    console.error(e);
+    setSyncStatus('error', 'Error al guardar');
+  }
+}
+
+// ── Filter ─────────────────────────────────────────────────────
+function setFilter(f, btn) {
   filtro = f;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  btn.classList.add('active');
   render();
 }
 
-function toggle(id) {
-  if (done.includes(id)) done = done.filter(x => x !== id);
-  else done.push(id);
-  save();
-  render();
-}
-
-function resetAll() {
-  if (confirm('¿Desmarcar todas las tareas?')) { done = []; save(); render(); }
-}
-
+// ── Form toggle ────────────────────────────────────────────────
 function toggleForm() {
-  const wrap = document.getElementById('form-wrap');
-  const icon = document.getElementById('toggle-icon');
+  const wrap  = document.getElementById('form-wrap');
+  const icon  = document.getElementById('toggle-icon');
   const label = document.getElementById('toggle-label');
-  const open = wrap.classList.toggle('open');
-  icon.textContent = open ? '✕' : '＋';
+  const open  = wrap.classList.toggle('open');
+  icon.textContent  = open ? '✕' : '＋';
   label.textContent = open ? 'Cancelar' : 'Agregar nueva tarea';
 }
 
-function addTarea() {
-  const texto = document.getElementById('new-texto').value.trim();
-  const proj = document.getElementById('new-proj').value.trim();
-  if (!texto) { alert('Escribe la descripción de la tarea.'); return; }
-  if (!proj) { alert('Escribe el nombre del proyecto.'); return; }
-  const maxId = TAREAS.reduce((m, t) => Math.max(m, t.id), 0);
-  const extra = JSON.parse(localStorage.getItem('promesas_extra') || '[]');
-  const nueva = {
-    id: maxId + extra.length + 1,
-    proj: proj,
-    tipo: document.getElementById('new-tipo').value,
-    texto: texto,
-    prio: document.getElementById('new-prio').value,
-    resp: document.getElementById('new-resp').value,
-  };
-  extra.push(nueva);
-  TAREAS.push(nueva);
-  localStorage.setItem('promesas_extra', JSON.stringify(extra));
-  document.getElementById('new-texto').value = '';
-  document.getElementById('new-proj').value = '';
-  toggleForm();
-  render();
-}
-
-// Cargar tareas extra guardadas
-(function() {
-  const extra = JSON.parse(localStorage.getItem('promesas_extra') || '[]');
-  const maxId = TAREAS.reduce((m, t) => Math.max(m, t.id), 0);
-  extra.forEach((t, i) => { t.id = maxId + i + 1; TAREAS.push(t); });
-})();
-
+// ── Render ─────────────────────────────────────────────────────
 function render() {
-  const total = TAREAS.length;
-  const doneCount = TAREAS.filter(t => done.includes(t.id)).length;
+  const total     = allTasks.length;
+  const doneCount = allTasks.filter(t => doneIds.includes(t.id)).length;
   document.getElementById('s-total').textContent = total;
-  document.getElementById('s-pend').textContent = total - doneCount;
-  document.getElementById('s-done').textContent = doneCount;
+  document.getElementById('s-pend').textContent  = total - doneCount;
+  document.getElementById('s-done').textContent  = doneCount;
 
-  const filtered = TAREAS.filter(t => {
+  const filtered = allTasks.filter(t => {
     if (filtro === 'todos') return true;
-    if (filtro === 'alta') return t.prio === 'alta';
+    if (filtro === 'alta')  return t.prio === 'alta';
     return t.resp === filtro;
   });
 
   const proyectos = [...new Set(filtered.map(t => t.proj))];
-  const app = document.getElementById('app');
-  app.innerHTML = proyectos.map(proj => {
-    const tareas = filtered.filter(t => t.proj === proj);
-    const tipo = tareas[0].tipo;
-    const projDone = tareas.filter(t => done.includes(t.id)).length;
-    const pct = Math.round((projDone / tareas.length) * 100);
+  document.getElementById('app').innerHTML = proyectos.map(proj => {
+    const tareas   = filtered.filter(t => t.proj === proj);
+    const tipo     = tareas[0].tipo;
+    const projDone = tareas.filter(t => doneIds.includes(t.id)).length;
+    const pct      = Math.round((projDone / tareas.length) * 100);
     return `
       <div class="project">
         <div class="proj-header ${tipo}">
@@ -254,13 +367,13 @@ function render() {
         <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
         <div class="task-list">
           ${tareas.map(t => `
-            <div class="task${done.includes(t.id) ? ' done' : ''}" onclick="toggle(${t.id})">
+            <div class="task${doneIds.includes(t.id) ? ' done' : ''}" onclick="toggle('${t.id}')">
               <div class="chk"><span class="chk-icon">✓</span></div>
               <div class="task-info">
                 <div class="task-text">${t.texto}</div>
                 <div class="task-meta">
                   <span class="meta-pill prio-${t.prio}">${t.prio}</span>
-                  <span class="meta-pill resp-${t.resp}">${RESP_LABEL[t.resp]}</span>
+                  <span class="meta-pill resp-${t.resp}">${RESP_LABEL[t.resp] || t.resp}</span>
                 </div>
               </div>
             </div>
@@ -271,8 +384,24 @@ function render() {
   }).join('');
 }
 
-document.getElementById('fecha-hoy').textContent = new Date().toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-render();
+// ── Boot ───────────────────────────────────────────────────────
+document.getElementById('fecha-hoy').textContent =
+  new Date().toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+(async () => {
+  setSyncStatus('syncing', 'Conectando…');
+  try {
+    await ensureSeedTasks();
+    startListeners();
+    setSyncStatus('connected', 'En tiempo real');
+    document.getElementById('loading-overlay').classList.add('hidden');
+  } catch (e) {
+    console.error('Boot error:', e);
+    setSyncStatus('error', 'Sin conexión a Firestore');
+    document.getElementById('loading-overlay').querySelector('.loading-text').textContent =
+      'Error conectando. Verifica las reglas de Firestore.';
+  }
+})();
 </script>
 </body>
 </html>
