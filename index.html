@@ -3,90 +3,85 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tareas Promesas — Juliana</title>
+<title>Tareas Promesas</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; padding: 16px; max-width: 680px; margin: 0 auto; }
-  h1 { font-size: 18px; font-weight: 600; margin: 16px 0 4px; }
-  .subtitle { font-size: 13px; color: #888; margin-bottom: 20px; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
-  .stat { background: #fff; border-radius: 10px; padding: 12px; text-align: center; border: 0.5px solid #e0e0d8; }
-  .stat-val { font-size: 24px; font-weight: 600; }
-  .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
-  .stat-val.done { color: #2d7a4f; }
-  .stat-val.pend { color: #c05a1f; }
-  .project { margin-bottom: 20px; }
-  .proj-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 10px 10px 0 0; cursor: pointer; user-select: none; }
-  .proj-header.interno { background: #eeecfe; }
-  .proj-header.externo { background: #e0f4ec; }
-  .proj-title { font-size: 14px; font-weight: 600; }
-  .proj-title.interno { color: #3c3489; }
-  .proj-title.externo { color: #085041; }
-  .proj-badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
-  .interno .proj-badge { background: #cecbf6; color: #26215c; }
-  .externo .proj-badge { background: #9fe1cb; color: #04342c; }
-  .proj-count { font-size: 12px; color: #888; }
-  .task-list { background: #fff; border: 0.5px solid #e0e0d8; border-radius: 0 0 10px 10px; overflow: hidden; }
-  .task { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-bottom: 0.5px solid #f0f0e8; transition: background 0.15s; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .task:last-child { border-bottom: none; }
-  .task:active { background: #f8f8f4; }
-  .task.done { opacity: 0.45; }
-  .chk { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #ccc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; transition: all 0.2s; }
-  .task.done .chk { background: #2d7a4f; border-color: #2d7a4f; }
-  .chk-icon { display: none; color: #fff; font-size: 13px; }
-  .task.done .chk-icon { display: block; }
-  .task-info { flex: 1; }
-  .task-text { font-size: 14px; line-height: 1.4; }
-  .task.done .task-text { text-decoration: line-through; }
-  .task-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
-  .meta-pill { font-size: 11px; padding: 2px 7px; border-radius: 20px; font-weight: 500; }
-  .prio-alta { background: #faece7; color: #993c1d; }
-  .prio-media { background: #faeeda; color: #633806; }
-  .prio-normal { background: #f0f0e8; color: #555; }
-  .resp-JY { background: #fbeaf0; color: #72243e; }
-  .resp-PA { background: #faeeda; color: #633806; }
-  .resp-CA { background: #e0f4ec; color: #085041; }
-  .resp-JU { background: #eeecfe; color: #3c3489; }
-  .resp-PE { background: #e6f1fb; color: #0c447c; }
-  .progress-bar { height: 4px; background: #e0e0d8; border-radius: 2px; margin: 0 14px 10px; }
-  .progress-fill { height: 100%; background: #2d7a4f; border-radius: 2px; transition: width 0.3s; }
-  .filter-row { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
-  .filter-btn { font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 0.5px solid #ccc; background: #fff; color: #555; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .filter-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-  .reset-btn { display: block; width: 100%; padding: 12px; background: #fff; border: 0.5px solid #e0e0d8; border-radius: 10px; font-size: 13px; color: #888; text-align: center; cursor: pointer; margin-top: 8px; }
-  .add-section { background: #fff; border: 0.5px solid #e0e0d8; border-radius: 10px; padding: 14px; margin-bottom: 20px; }
-  .add-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #1a1a1a; }
-  .add-field { width: 100%; font-size: 14px; padding: 9px 12px; border: 0.5px solid #ddd; border-radius: 8px; margin-bottom: 8px; background: #fafaf8; color: #1a1a1a; -webkit-appearance: none; }
-  .add-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-  .add-row select { width: 100%; font-size: 13px; padding: 9px 12px; border: 0.5px solid #ddd; border-radius: 8px; background: #fafaf8; color: #1a1a1a; -webkit-appearance: none; }
-  .add-btn { width: 100%; padding: 11px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-  .add-btn:active { opacity: 0.8; }
-  .toggle-add { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #534ab7; background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 16px; -webkit-tap-highlight-color: transparent; }
-  .form-wrap { display: none; }
-  .form-wrap.open { display: block; }
-
-  /* Sync status indicator */
-  .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #888; margin-bottom: 12px; }
-  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; flex-shrink: 0; transition: background 0.3s; }
-  .sync-dot.connected { background: #2d7a4f; }
-  .sync-dot.syncing { background: #f0a500; animation: pulse 1s infinite; }
-  .sync-dot.error { background: #c0392b; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-  /* Loading overlay */
-  #loading-overlay { position: fixed; inset: 0; background: #f5f5f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; z-index: 100; }
-  #loading-overlay.hidden { display: none; }
-  .loading-spinner { width: 28px; height: 28px; border: 2.5px solid #e0e0d8; border-top-color: #534ab7; border-radius: 50%; animation: spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 13px; color: #888; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; padding: 16px; max-width: 680px; margin: 0 auto; }
+h1 { font-size: 18px; font-weight: 600; margin: 16px 0 4px; }
+.subtitle { font-size: 13px; color: #888; margin-bottom: 20px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 24px; }
+.stat { background: #fff; border-radius: 10px; padding: 12px; text-align: center; border: 0.5px solid #e0e0d8; }
+.stat-val { font-size: 24px; font-weight: 600; }
+.stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+.stat-val.done { color: #2d7a4f; }
+.stat-val.pend { color: #c05a1f; }
+.project { margin-bottom: 20px; }
+.proj-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 10px 10px 0 0; }
+.proj-header.interno { background: #eeecfe; }
+.proj-header.externo { background: #e0f4ec; }
+.proj-title { font-size: 14px; font-weight: 600; }
+.proj-title.interno { color: #3c3489; }
+.proj-title.externo { color: #085041; }
+.proj-badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.interno .proj-badge { background: #cecbf6; color: #26215c; }
+.externo .proj-badge { background: #9fe1cb; color: #04342c; }
+.proj-count { font-size: 12px; color: #888; }
+.task-list { background: #fff; border: 0.5px solid #e0e0d8; border-radius: 0 0 10px 10px; overflow: hidden; }
+.task { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-bottom: 0.5px solid #f0f0e8; transition: background 0.15s; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.task:last-child { border-bottom: none; }
+.task:active { background: #f8f8f4; }
+.task.done { opacity: 0.45; }
+.chk { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #ccc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; transition: all 0.2s; }
+.task.done .chk { background: #2d7a4f; border-color: #2d7a4f; }
+.chk-icon { display: none; color: #fff; font-size: 13px; }
+.task.done .chk-icon { display: block; }
+.task-info { flex: 1; }
+.task-text { font-size: 14px; line-height: 1.4; }
+.task.done .task-text { text-decoration: line-through; }
+.task-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+.meta-pill { font-size: 11px; padding: 2px 7px; border-radius: 20px; font-weight: 500; }
+.prio-alta { background: #faece7; color: #993c1d; }
+.prio-media { background: #faeeda; color: #633806; }
+.prio-normal { background: #f0f0e8; color: #555; }
+.resp-JY { background: #fbeaf0; color: #72243e; }
+.resp-PA { background: #faeeda; color: #633806; }
+.resp-CA { background: #e0f4ec; color: #085041; }
+.resp-JU { background: #eeecfe; color: #3c3489; }
+.resp-PE { background: #e6f1fb; color: #0c447c; }
+.progress-bar { height: 4px; background: #e0e0d8; border-radius: 2px; margin: 0 14px 10px; }
+.progress-fill { height: 100%; background: #2d7a4f; border-radius: 2px; transition: width 0.3s; }
+.filter-row { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+.filter-btn { font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 0.5px solid #ccc; background: #fff; color: #555; white-space: nowrap; cursor: pointer; }
+.filter-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.reset-btn { display: block; width: 100%; padding: 12px; background: #fff; border: 0.5px solid #e0e0d8; border-radius: 10px; font-size: 13px; color: #888; text-align: center; cursor: pointer; margin-top: 8px; }
+.add-section { background: #fff; border: 0.5px solid #e0e0d8; border-radius: 10px; padding: 14px; margin-bottom: 20px; }
+.add-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #1a1a1a; }
+.add-field { width: 100%; font-size: 14px; padding: 9px 12px; border: 0.5px solid #ddd; border-radius: 8px; margin-bottom: 8px; background: #fafaf8; color: #1a1a1a; -webkit-appearance: none; }
+.add-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.add-row select { width: 100%; font-size: 13px; padding: 9px 12px; border: 0.5px solid #ddd; border-radius: 8px; background: #fafaf8; color: #1a1a1a; -webkit-appearance: none; }
+.add-btn { width: 100%; padding: 11px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.add-btn:active { opacity: 0.8; }
+.toggle-add { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #534ab7; background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 16px; }
+.form-wrap { display: none; }
+.form-wrap.open { display: block; }
+.sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #888; margin-bottom: 12px; }
+.sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; flex-shrink: 0; transition: background 0.3s; }
+.sync-dot.connected { background: #2d7a4f; }
+.sync-dot.syncing { background: #f0a500; animation: pulse 1s infinite; }
+.sync-dot.error { background: #c0392b; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+#loading-overlay { position: fixed; inset: 0; background: #f5f5f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; z-index: 100; }
+#loading-overlay.hidden { display: none; }
+.loading-spinner { width: 28px; height: 28px; border: 2.5px solid #e0e0d8; border-top-color: #534ab7; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 13px; color: #888; }
 </style>
 </head>
 <body>
 
-<!-- Loading overlay -->
 <div id="loading-overlay">
   <div class="loading-spinner"></div>
-  <div class="loading-text">Conectando con Firestore…</div>
+  <div class="loading-text" id="loading-text">Conectando con Firestore...</div>
 </div>
 
 <h1>Tareas Promesas</h1>
@@ -94,7 +89,7 @@
 
 <div class="sync-status">
   <div class="sync-dot" id="sync-dot"></div>
-  <span id="sync-label">Conectando…</span>
+  <span id="sync-label">Conectando...</span>
 </div>
 
 <div class="stats">
@@ -104,22 +99,23 @@
 </div>
 
 <div class="filter-row">
-  <button class="filter-btn active" onclick="setFilter('todos',this)">Todas</button>
-  <button class="filter-btn" onclick="setFilter('JY',this)">Juliana</button>
-  <button class="filter-btn" onclick="setFilter('PA',this)">Paulina</button>
-  <button class="filter-btn" onclick="setFilter('CA',this)">Carolina</button>
-  <button class="filter-btn" onclick="setFilter('JU',this)">Juan</button>
-  <button class="filter-btn" onclick="setFilter('alta',this)">Solo alta prioridad</button>
+  <button class="filter-btn active" data-filtro="todos">Todas</button>
+  <button class="filter-btn" data-filtro="JY">Juliana</button>
+  <button class="filter-btn" data-filtro="PA">Paulina</button>
+  <button class="filter-btn" data-filtro="CA">Carolina</button>
+  <button class="filter-btn" data-filtro="JU">Juan</button>
+  <button class="filter-btn" data-filtro="alta">Solo alta prioridad</button>
 </div>
 
-<button class="toggle-add" onclick="toggleForm()">
-  <span id="toggle-icon">＋</span> <span id="toggle-label">Agregar nueva tarea</span>
+<button class="toggle-add" id="btn-toggle-form">
+  <span id="toggle-icon">+</span>
+  <span id="toggle-label">Agregar nueva tarea</span>
 </button>
 
 <div class="form-wrap" id="form-wrap">
   <div class="add-section">
     <div class="add-title">Nueva tarea</div>
-    <input class="add-field" type="text" id="new-texto" placeholder="Descripción de la tarea...">
+    <input class="add-field" type="text" id="new-texto" placeholder="Descripcion de la tarea...">
     <input class="add-field" type="text" id="new-proj" placeholder="Proyecto (ej: Club Promesas, Vivoon...)">
     <div class="add-row">
       <select id="new-tipo">
@@ -139,20 +135,18 @@
       <option value="JU">Juan</option>
       <option value="PE">Pedro</option>
     </select>
-    <button class="add-btn" onclick="addTarea()">Guardar tarea</button>
+    <button class="add-btn" id="btn-save">Guardar tarea</button>
   </div>
 </div>
 
 <div id="app"></div>
-<button class="reset-btn" onclick="resetAll()">Desmarcar todas las tareas</button>
+<button class="reset-btn" id="btn-reset">Desmarcar todas las tareas</button>
 
-<!-- Firebase SDK (compat version — works in plain HTML without bundler) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, doc, getDocs, setDoc, addDoc, onSnapshot, query, orderBy, serverTimestamp, writeBatch, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-<script>
-// ── Firebase init ──────────────────────────────────────────────
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey: "AIzaSyAMFVVCAekTAqRaerBpuifUByzBOVqTd5I",
   authDomain: "promesas-tareas.firebaseapp.com",
   projectId: "promesas-tareas",
@@ -161,114 +155,137 @@ const firebaseConfig = {
   appId: "1:652607730000:web:0b5fcdc58845f12f423c55",
   measurementId: "G-8PN2XZLY8T"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
 
-// ── Collections ────────────────────────────────────────────────
-// tasks   → { id (string), proj, tipo, texto, prio, resp, seed (bool), createdAt }
-// status  → single doc "global" → { done: [id, id, …] }
+var firebaseApp = initializeApp(firebaseConfig);
+var db = getFirestore(firebaseApp);
+var tasksCol = collection(db, 'tasks');
+var statusRef = doc(db, 'status', 'global');
 
-const tasksCol  = db.collection('tasks');
-const statusDoc = db.collection('status').doc('global');
-
-// ── Seed tasks (hardcoded list) ────────────────────────────────
-const SEED_TASKS = [
-  { id:'t1',  proj:'Copa Promesas',        tipo:'interno', texto:'Revisar archivo de control comercial copa',        prio:'alta',   resp:'CA' },
-  { id:'t2',  proj:'Copa Promesas',        tipo:'interno', texto:'Convenio Reinvent',                                prio:'alta',   resp:'JY' },
-  { id:'t3',  proj:'Copa Promesas',        tipo:'interno', texto:'E-commerce',                                       prio:'media',  resp:'CA' },
-  { id:'t4',  proj:'Copa Promesas',        tipo:'interno', texto:'Podcast',                                          prio:'normal', resp:'JY' },
-  { id:'t5',  proj:'Copa Promesas',        tipo:'interno', texto:'Envío cotizaciones paquetes',                      prio:'alta',   resp:'CA' },
-  { id:'t6',  proj:'Copa Promesas',        tipo:'interno', texto:'Finalizar precios de proveedores y negociaciones', prio:'alta',   resp:'JY' },
-  { id:'t7',  proj:'Copa Promesas',        tipo:'interno', texto:'Revisión / seguimiento de inscripciones',         prio:'media',  resp:'CA' },
-  { id:'t8',  proj:'Club Promesas',        tipo:'interno', texto:'Preparación podcast',                              prio:'media',  resp:'JY' },
-  { id:'t9',  proj:'Club Promesas',        tipo:'interno', texto:'Estrategia club — base de datos colegios',        prio:'alta',   resp:'PA' },
-  { id:'t10', proj:'Club Promesas',        tipo:'interno', texto:'NBA Tour',                                         prio:'media',  resp:'JY' },
-  { id:'t11', proj:'Club Promesas',        tipo:'interno', texto:'Proyecto comercial Promesas (Copa y Club)',        prio:'alta',   resp:'JY' },
-  { id:'t12', proj:'Club Promesas',        tipo:'interno', texto:'Informe periodo Coach',                            prio:'alta',   resp:'JY' },
-  { id:'t13', proj:'Club Promesas',        tipo:'interno', texto:'Herramienta control de procesos por área',        prio:'media',  resp:'JY' },
-  { id:'t14', proj:'Club Promesas',        tipo:'interno', texto:'Reconstrucción página del Club Promesas',         prio:'media',  resp:'JY' },
-  { id:'t15', proj:'Club Promesas',        tipo:'interno', texto:'Entrega planeación community manager (1 jun)',    prio:'alta',   resp:'CA' },
-  { id:'t16', proj:'Club Promesas',        tipo:'interno', texto:'Seguimiento al pedido de uniformes Vivoon',       prio:'alta',   resp:'JU' },
-  { id:'t17', proj:'Club Promesas',        tipo:'interno', texto:'Seguimiento categorización',                      prio:'media',  resp:'JY' },
-  { id:'t18', proj:'Marinilla',            tipo:'interno', texto:'Concretar visita con Carlos (UPB) — presentar proyecto', prio:'alta', resp:'JY' },
-  { id:'t19', proj:'Panamá',               tipo:'interno', texto:'Reunión recaudo',                                  prio:'alta',   resp:'JY' },
-  { id:'t20', proj:'Panamá',               tipo:'interno', texto:'Promoción y plan nuevo de ventas',                 prio:'media',  resp:'JY' },
-  { id:'t21', proj:'Panamá',               tipo:'interno', texto:'Reestructuración de precios',                      prio:'media',  resp:'JY' },
-  { id:'t22', proj:'Vivoon',               tipo:'externo', texto:'Firmar convenio Vivoon',                           prio:'alta',   resp:'JY' },
-  { id:'t23', proj:'Vivoon',               tipo:'externo', texto:'Listado y seguimiento comercial Vivoon',           prio:'alta',   resp:'JY' },
-  { id:'t24', proj:'Vivoon',               tipo:'externo', texto:'Proyecto embajador Vivoon',                        prio:'media',  resp:'JY' },
-  { id:'t25', proj:'Vivoon',               tipo:'externo', texto:'Seguimiento entrega pedidos Vivoon',               prio:'alta',   resp:'JU' },
-  { id:'t26', proj:'U. San Buenaventura',  tipo:'externo', texto:'Concretar visita #2 a Promesas USB',              prio:'alta',   resp:'JY' },
-  { id:'t27', proj:'U. San Buenaventura',  tipo:'externo', texto:'Enviar plan estratégico',                         prio:'alta',   resp:'PA' },
-  { id:'t28', proj:'U. San Buenaventura',  tipo:'externo', texto:'Enviar mapa de gestión',                          prio:'alta',   resp:'PA' },
-  { id:'t29', proj:'U. San Buenaventura',  tipo:'externo', texto:'Enviar mapa de procesos',                         prio:'alta',   resp:'PA' },
-  { id:'t30', proj:'U. San Buenaventura',  tipo:'externo', texto:'Enviar estructura organizacional',                prio:'alta',   resp:'PA' },
-  { id:'t31', proj:'Copa UPB',             tipo:'externo', texto:'Propuesta Copa "Ser Diferente" UPB',              prio:'alta',   resp:'PA' },
-  { id:'t32', proj:'Proyecto Humano',      tipo:'externo', texto:'Elaboración propuesta UPB (para el rector)',      prio:'alta',   resp:'JY' },
-  { id:'t33', proj:'Proyecto Humano',      tipo:'externo', texto:'Elaboración taller papás Promesas',               prio:'media',  resp:'JY' },
-  { id:'t34', proj:'Edunova',              tipo:'externo', texto:'Elaboración plan comercial',                       prio:'alta',   resp:'JY' },
+var SEED_TASKS = [
+  { id: 't1',  proj: 'Copa Promesas',       tipo: 'interno', texto: 'Revisar archivo de control comercial copa',        prio: 'alta',   resp: 'CA' },
+  { id: 't2',  proj: 'Copa Promesas',       tipo: 'interno', texto: 'Convenio Reinvent',                                prio: 'alta',   resp: 'JY' },
+  { id: 't3',  proj: 'Copa Promesas',       tipo: 'interno', texto: 'E-commerce',                                       prio: 'media',  resp: 'CA' },
+  { id: 't4',  proj: 'Copa Promesas',       tipo: 'interno', texto: 'Podcast',                                          prio: 'normal', resp: 'JY' },
+  { id: 't5',  proj: 'Copa Promesas',       tipo: 'interno', texto: 'Envio cotizaciones paquetes',                      prio: 'alta',   resp: 'CA' },
+  { id: 't6',  proj: 'Copa Promesas',       tipo: 'interno', texto: 'Finalizar precios de proveedores y negociaciones', prio: 'alta',   resp: 'JY' },
+  { id: 't7',  proj: 'Copa Promesas',       tipo: 'interno', texto: 'Revision / seguimiento de inscripciones',          prio: 'media',  resp: 'CA' },
+  { id: 't8',  proj: 'Club Promesas',       tipo: 'interno', texto: 'Preparacion podcast',                              prio: 'media',  resp: 'JY' },
+  { id: 't9',  proj: 'Club Promesas',       tipo: 'interno', texto: 'Estrategia club - base de datos colegios',         prio: 'alta',   resp: 'PA' },
+  { id: 't10', proj: 'Club Promesas',       tipo: 'interno', texto: 'NBA Tour',                                         prio: 'media',  resp: 'JY' },
+  { id: 't11', proj: 'Club Promesas',       tipo: 'interno', texto: 'Proyecto comercial Promesas (Copa y Club)',         prio: 'alta',   resp: 'JY' },
+  { id: 't12', proj: 'Club Promesas',       tipo: 'interno', texto: 'Informe periodo Coach',                            prio: 'alta',   resp: 'JY' },
+  { id: 't13', proj: 'Club Promesas',       tipo: 'interno', texto: 'Herramienta control de procesos por area',         prio: 'media',  resp: 'JY' },
+  { id: 't14', proj: 'Club Promesas',       tipo: 'interno', texto: 'Reconstruccion pagina del Club Promesas',          prio: 'media',  resp: 'JY' },
+  { id: 't15', proj: 'Club Promesas',       tipo: 'interno', texto: 'Entrega planeacion community manager (1 jun)',     prio: 'alta',   resp: 'CA' },
+  { id: 't16', proj: 'Club Promesas',       tipo: 'interno', texto: 'Seguimiento al pedido de uniformes Vivoon',        prio: 'alta',   resp: 'JU' },
+  { id: 't17', proj: 'Club Promesas',       tipo: 'interno', texto: 'Seguimiento categorizacion',                       prio: 'media',  resp: 'JY' },
+  { id: 't18', proj: 'Marinilla',           tipo: 'interno', texto: 'Concretar visita con Carlos (UPB) - presentar proyecto', prio: 'alta', resp: 'JY' },
+  { id: 't19', proj: 'Panama',              tipo: 'interno', texto: 'Reunion recaudo',                                  prio: 'alta',   resp: 'JY' },
+  { id: 't20', proj: 'Panama',              tipo: 'interno', texto: 'Promocion y plan nuevo de ventas',                 prio: 'media',  resp: 'JY' },
+  { id: 't21', proj: 'Panama',              tipo: 'interno', texto: 'Reestructuracion de precios',                      prio: 'media',  resp: 'JY' },
+  { id: 't22', proj: 'Vivoon',              tipo: 'externo', texto: 'Firmar convenio Vivoon',                           prio: 'alta',   resp: 'JY' },
+  { id: 't23', proj: 'Vivoon',              tipo: 'externo', texto: 'Listado y seguimiento comercial Vivoon',           prio: 'alta',   resp: 'JY' },
+  { id: 't24', proj: 'Vivoon',              tipo: 'externo', texto: 'Proyecto embajador Vivoon',                        prio: 'media',  resp: 'JY' },
+  { id: 't25', proj: 'Vivoon',              tipo: 'externo', texto: 'Seguimiento entrega pedidos Vivoon',               prio: 'alta',   resp: 'JU' },
+  { id: 't26', proj: 'U. San Buenaventura', tipo: 'externo', texto: 'Concretar visita #2 a Promesas USB',               prio: 'alta',   resp: 'JY' },
+  { id: 't27', proj: 'U. San Buenaventura', tipo: 'externo', texto: 'Enviar plan estrategico',                          prio: 'alta',   resp: 'PA' },
+  { id: 't28', proj: 'U. San Buenaventura', tipo: 'externo', texto: 'Enviar mapa de gestion',                           prio: 'alta',   resp: 'PA' },
+  { id: 't29', proj: 'U. San Buenaventura', tipo: 'externo', texto: 'Enviar mapa de procesos',                          prio: 'alta',   resp: 'PA' },
+  { id: 't30', proj: 'U. San Buenaventura', tipo: 'externo', texto: 'Enviar estructura organizacional',                 prio: 'alta',   resp: 'PA' },
+  { id: 't31', proj: 'Copa UPB',            tipo: 'externo', texto: 'Propuesta Copa Ser Diferente UPB',                 prio: 'alta',   resp: 'PA' },
+  { id: 't32', proj: 'Proyecto Humano',     tipo: 'externo', texto: 'Elaboracion propuesta UPB (para el rector)',       prio: 'alta',   resp: 'JY' },
+  { id: 't33', proj: 'Proyecto Humano',     tipo: 'externo', texto: 'Elaboracion taller papas Promesas',                prio: 'media',  resp: 'JY' },
+  { id: 't34', proj: 'Edunova',             tipo: 'externo', texto: 'Elaboracion plan comercial',                       prio: 'alta',   resp: 'JY' }
 ];
 
-const RESP_LABEL = { JY:'Juliana', PA:'Paulina', CA:'Carolina', JU:'Juan', PE:'Pedro' };
+var RESP_LABEL = { JY: 'Juliana', PA: 'Paulina', CA: 'Carolina', JU: 'Juan', PE: 'Pedro' };
+var allTasks = [];
+var doneIds = [];
+var filtro = 'todos';
 
-// ── App state ──────────────────────────────────────────────────
-let allTasks = []; // merged: seed + extras from Firestore
-let doneIds  = []; // array of task id strings
-let filtro   = 'todos';
-
-// ── Sync status helpers ────────────────────────────────────────
 function setSyncStatus(state, text) {
-  const dot   = document.getElementById('sync-dot');
-  const label = document.getElementById('sync-label');
-  dot.className = 'sync-dot ' + state;
-  label.textContent = text;
+  document.getElementById('sync-dot').className = 'sync-dot ' + state;
+  document.getElementById('sync-label').textContent = text;
 }
 
-// ── Seed Firestore on first run ────────────────────────────────
-async function ensureSeedTasks() {
-  const snap = await tasksCol.where('seed', '==', true).limit(1).get();
-  if (!snap.empty) return; // already seeded
-  const batch = db.batch();
-  SEED_TASKS.forEach(t => {
-    const ref = tasksCol.doc(t.id);
-    batch.set(ref, { ...t, seed: true, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-  });
-  await batch.commit();
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.add('hidden');
 }
 
-// ── Real-time listeners ────────────────────────────────────────
-function startListeners() {
-  // 1. Listen to tasks collection
-  tasksCol.orderBy('createdAt', 'asc').onSnapshot(snap => {
-    allTasks = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-    render();
-  }, err => {
-    console.error('Tasks listener error:', err);
-    setSyncStatus('error', 'Error de conexión');
+function showLoadingError(msg) {
+  document.getElementById('loading-text').textContent = msg;
+}
+
+function render() {
+  var total = allTasks.length;
+  var doneCount = allTasks.filter(function(t) { return doneIds.indexOf(t.id) !== -1; }).length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-pend').textContent = total - doneCount;
+  document.getElementById('s-done').textContent = doneCount;
+
+  var filtered = allTasks.filter(function(t) {
+    if (filtro === 'todos') return true;
+    if (filtro === 'alta') return t.prio === 'alta';
+    return t.resp === filtro;
   });
 
-  // 2. Listen to done status doc
-  statusDoc.onSnapshot(snap => {
-    if (snap.exists) {
-      doneIds = snap.data().done || [];
-    } else {
-      doneIds = [];
-    }
-    render();
-  }, err => {
-    console.error('Status listener error:', err);
+  var projNames = [];
+  filtered.forEach(function(t) {
+    if (projNames.indexOf(t.proj) === -1) projNames.push(t.proj);
+  });
+
+  var html = '';
+  projNames.forEach(function(proj) {
+    var tareas = filtered.filter(function(t) { return t.proj === proj; });
+    var tipo = tareas[0].tipo;
+    var projDone = tareas.filter(function(t) { return doneIds.indexOf(t.id) !== -1; }).length;
+    var pct = Math.round((projDone / tareas.length) * 100);
+
+    html += '<div class="project">';
+    html += '<div class="proj-header ' + tipo + '">';
+    html += '<div><span class="proj-title ' + tipo + '">' + proj + '</span>';
+    html += '<span class="proj-badge">' + tipo + '</span></div>';
+    html += '<span class="proj-count">' + projDone + '/' + tareas.length + '</span>';
+    html += '</div>';
+    html += '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div>';
+    html += '<div class="task-list">';
+
+    tareas.forEach(function(t) {
+      var isDone = doneIds.indexOf(t.id) !== -1;
+      var doneClass = isDone ? ' done' : '';
+      var respLabel = RESP_LABEL[t.resp] || t.resp;
+      html += '<div class="task' + doneClass + '" data-taskid="' + t.id + '">';
+      html += '<div class="chk"><span class="chk-icon">&#10003;</span></div>';
+      html += '<div class="task-info">';
+      html += '<div class="task-text">' + t.texto + '</div>';
+      html += '<div class="task-meta">';
+      html += '<span class="meta-pill prio-' + t.prio + '">' + t.prio + '</span>';
+      html += '<span class="meta-pill resp-' + t.resp + '">' + respLabel + '</span>';
+      html += '</div></div></div>';
+    });
+
+    html += '</div></div>';
+  });
+
+  document.getElementById('app').innerHTML = html;
+
+  document.querySelectorAll('.task[data-taskid]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      toggleTask(el.getAttribute('data-taskid'));
+    });
   });
 }
 
-// ── Toggle a task done/undone ──────────────────────────────────
-async function toggle(id) {
-  setSyncStatus('syncing', 'Guardando…');
+async function toggleTask(id) {
+  setSyncStatus('syncing', 'Guardando...');
   try {
-    const newDone = doneIds.includes(id)
-      ? doneIds.filter(x => x !== id)
-      : [...doneIds, id];
-
-    await statusDoc.set({ done: newDone }, { merge: true });
+    var newDone;
+    if (doneIds.indexOf(id) !== -1) {
+      newDone = doneIds.filter(function(x) { return x !== id; });
+    } else {
+      newDone = doneIds.concat([id]);
+    }
+    await setDoc(statusRef, { done: newDone }, { merge: true });
     setSyncStatus('connected', 'Sincronizado');
   } catch (e) {
     console.error(e);
@@ -276,26 +293,24 @@ async function toggle(id) {
   }
 }
 
-// ── Add a new task ─────────────────────────────────────────────
 async function addTarea() {
-  const texto = document.getElementById('new-texto').value.trim();
-  const proj  = document.getElementById('new-proj').value.trim();
-  if (!texto) { alert('Escribe la descripción de la tarea.'); return; }
-  if (!proj)  { alert('Escribe el nombre del proyecto.'); return; }
-
-  setSyncStatus('syncing', 'Guardando…');
+  var texto = document.getElementById('new-texto').value.trim();
+  var proj = document.getElementById('new-proj').value.trim();
+  if (!texto) { alert('Escribe la descripcion de la tarea.'); return; }
+  if (!proj) { alert('Escribe el nombre del proyecto.'); return; }
+  setSyncStatus('syncing', 'Guardando...');
   try {
-    await tasksCol.add({
-      proj,
-      tipo:      document.getElementById('new-tipo').value,
-      texto,
-      prio:      document.getElementById('new-prio').value,
-      resp:      document.getElementById('new-resp').value,
-      seed:      false,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    await addDoc(tasksCol, {
+      proj: proj,
+      tipo: document.getElementById('new-tipo').value,
+      texto: texto,
+      prio: document.getElementById('new-prio').value,
+      resp: document.getElementById('new-resp').value,
+      seed: false,
+      createdAt: serverTimestamp()
     });
     document.getElementById('new-texto').value = '';
-    document.getElementById('new-proj').value  = '';
+    document.getElementById('new-proj').value = '';
     toggleForm();
     setSyncStatus('connected', 'Sincronizado');
   } catch (e) {
@@ -304,12 +319,11 @@ async function addTarea() {
   }
 }
 
-// ── Reset all ──────────────────────────────────────────────────
 async function resetAll() {
-  if (!confirm('¿Desmarcar todas las tareas?')) return;
-  setSyncStatus('syncing', 'Guardando…');
+  if (!confirm('Desmarcar todas las tareas?')) return;
+  setSyncStatus('syncing', 'Guardando...');
   try {
-    await statusDoc.set({ done: [] });
+    await setDoc(statusRef, { done: [] });
     setSyncStatus('connected', 'Sincronizado');
   } catch (e) {
     console.error(e);
@@ -317,91 +331,89 @@ async function resetAll() {
   }
 }
 
-// ── Filter ─────────────────────────────────────────────────────
+function toggleForm() {
+  var wrap = document.getElementById('form-wrap');
+  var icon = document.getElementById('toggle-icon');
+  var label = document.getElementById('toggle-label');
+  var open = wrap.classList.toggle('open');
+  icon.textContent = open ? 'x' : '+';
+  label.textContent = open ? 'Cancelar' : 'Agregar nueva tarea';
+}
+
 function setFilter(f, btn) {
   filtro = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   render();
 }
 
-// ── Form toggle ────────────────────────────────────────────────
-function toggleForm() {
-  const wrap  = document.getElementById('form-wrap');
-  const icon  = document.getElementById('toggle-icon');
-  const label = document.getElementById('toggle-label');
-  const open  = wrap.classList.toggle('open');
-  icon.textContent  = open ? '✕' : '＋';
-  label.textContent = open ? 'Cancelar' : 'Agregar nueva tarea';
-}
-
-// ── Render ─────────────────────────────────────────────────────
-function render() {
-  const total     = allTasks.length;
-  const doneCount = allTasks.filter(t => doneIds.includes(t.id)).length;
-  document.getElementById('s-total').textContent = total;
-  document.getElementById('s-pend').textContent  = total - doneCount;
-  document.getElementById('s-done').textContent  = doneCount;
-
-  const filtered = allTasks.filter(t => {
-    if (filtro === 'todos') return true;
-    if (filtro === 'alta')  return t.prio === 'alta';
-    return t.resp === filtro;
+async function ensureSeedTasks() {
+  var snap = await getDocs(query(tasksCol, where('seed', '==', true)));
+  if (!snap.empty) return;
+  var batch = writeBatch(db);
+  SEED_TASKS.forEach(function(t) {
+    var ref = doc(tasksCol, t.id);
+    batch.set(ref, { id: t.id, proj: t.proj, tipo: t.tipo, texto: t.texto, prio: t.prio, resp: t.resp, seed: true, createdAt: serverTimestamp() });
   });
-
-  const proyectos = [...new Set(filtered.map(t => t.proj))];
-  document.getElementById('app').innerHTML = proyectos.map(proj => {
-    const tareas   = filtered.filter(t => t.proj === proj);
-    const tipo     = tareas[0].tipo;
-    const projDone = tareas.filter(t => doneIds.includes(t.id)).length;
-    const pct      = Math.round((projDone / tareas.length) * 100);
-    return `
-      <div class="project">
-        <div class="proj-header ${tipo}">
-          <div>
-            <span class="proj-title ${tipo}">${proj}</span>
-            <span class="proj-badge">${tipo}</span>
-          </div>
-          <span class="proj-count">${projDone}/${tareas.length}</span>
-        </div>
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        <div class="task-list">
-          ${tareas.map(t => `
-            <div class="task${doneIds.includes(t.id) ? ' done' : ''}" onclick="toggle('${t.id}')">
-              <div class="chk"><span class="chk-icon">✓</span></div>
-              <div class="task-info">
-                <div class="task-text">${t.texto}</div>
-                <div class="task-meta">
-                  <span class="meta-pill prio-${t.prio}">${t.prio}</span>
-                  <span class="meta-pill resp-${t.resp}">${RESP_LABEL[t.resp] || t.resp}</span>
-                </div>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }).join('');
+  await batch.commit();
 }
 
-// ── Boot ───────────────────────────────────────────────────────
-document.getElementById('fecha-hoy').textContent =
-  new Date().toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+function startListeners() {
+  onSnapshot(
+    query(tasksCol, orderBy('createdAt', 'asc')),
+    function(snap) {
+      allTasks = snap.docs.map(function(d) {
+        var data = d.data();
+        data.id = d.id;
+        return data;
+      });
+      render();
+      hideLoading();
+      setSyncStatus('connected', 'En tiempo real');
+    },
+    function(err) {
+      console.error(err);
+      setSyncStatus('error', 'Error de conexion');
+      showLoadingError('Error: ' + err.message);
+    }
+  );
 
-(async () => {
-  setSyncStatus('syncing', 'Conectando…');
-  try {
-    await ensureSeedTasks();
-    startListeners();
-    setSyncStatus('connected', 'En tiempo real');
-    document.getElementById('loading-overlay').classList.add('hidden');
-  } catch (e) {
-    console.error('Boot error:', e);
-    setSyncStatus('error', 'Sin conexión a Firestore');
-    document.getElementById('loading-overlay').querySelector('.loading-text').textContent =
-      'Error conectando. Verifica las reglas de Firestore.';
-  }
-})();
+  onSnapshot(
+    statusRef,
+    function(snap) {
+      if (snap.exists()) {
+        doneIds = snap.data().done || [];
+      } else {
+        doneIds = [];
+      }
+      render();
+    },
+    function(err) {
+      console.error(err);
+    }
+  );
+}
+
+document.getElementById('btn-toggle-form').addEventListener('click', toggleForm);
+document.getElementById('btn-save').addEventListener('click', addTarea);
+document.getElementById('btn-reset').addEventListener('click', resetAll);
+document.querySelectorAll('.filter-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    setFilter(btn.getAttribute('data-filtro'), btn);
+  });
+});
+
+var now = new Date();
+document.getElementById('fecha-hoy').textContent = now.toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+setSyncStatus('syncing', 'Conectando...');
+ensureSeedTasks().then(function() {
+  startListeners();
+}).catch(function(e) {
+  console.error(e);
+  setSyncStatus('error', 'Error al conectar');
+  showLoadingError('Error al conectar con Firestore: ' + e.message);
+});
 </script>
 </body>
 </html>
